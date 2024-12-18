@@ -1,0 +1,9 @@
+build/
+.lsp/
+.clj-kondo/
+.vscode/
+.vs/
+NetworkWeights*.txt
+Temp/
+out/
+scratch.py
