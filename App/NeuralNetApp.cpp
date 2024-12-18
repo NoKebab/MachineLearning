@@ -22,13 +22,12 @@ int main(void)
     //trainTest.yTest = irisDataset.predictor;
 
     NeuralNetBuilder neuralNetBuilder;
-    neuralNetBuilder.setLearningRate(0.5)
+    neuralNetBuilder.setLearningRate(0.75)
                     .setMomentum(0.1)
                     .setHiddenLayerActivation("sigmoid")
                     .setOutputLayerActivation("softmax")
                     .setInput(4)  // input  layer
-                    .addLayer(5)  // hidden layer
-                    .addLayer(5)  // hidden layer
+                    .addLayer(50)  // hidden layer
                     .setOutput(3) // output layer
                     .randomizeWeights();
     NeuralNet neuralNet = neuralNetBuilder.build();

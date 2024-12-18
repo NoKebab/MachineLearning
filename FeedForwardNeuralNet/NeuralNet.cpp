@@ -20,7 +20,7 @@ void NeuralNet::train(std::vector<std::vector<double>> &xTrain, std::vector<int>
         std::cout << "NeuralNet::train() size mismatch between xTrain and yTrain " << xTrain.size() << " " << yTrain.size() << std::endl;
         return;
     }
-    const size_t epochs = 1000;
+    const size_t epochs = 100;
     for (size_t epoch = 0; epoch < epochs; ++epoch)
     {
         //feedForward(xTrain);
@@ -126,6 +126,7 @@ void NeuralNet::feedForward(std::vector<double> &featureVector)
         zValues[i].add(biases[i]);
         activatedOutputs[i] = zValues[i];
         activatedOutputs[i].map(sigmoidElement);
+
         if (!lastLayer)
         {
             inputs[i + 1] = activatedOutputs[i];
