@@ -148,46 +148,6 @@ void NeuralNet::feedForward(std::vector<double> &featureVector)
 
 void NeuralNet::backPropagation(const int target)
 {
-    // # get error of the last layer
-    // last_layer_error = self.__last_layer_error(y_train_example)
-    // # use recurrence relation to get the errors of all other layers
-    // all_layer_errors = self.__layer_error(last_layer_error)
-    // # calculate new changes in weights
-    // changes_in_weights = self.__change_in_weights(all_layer_errors)
-    // # update the weights for every layer
-    // self.__update_weights(changes_in_weights)
-
-    //    layer_num = self.num_hidden_layers - 1
-    //    layer_errors = [last_layer_error]
-    //    while layer_num >= 0:
-    //        l_inputs = self.layers[layer_num]['inputs']
-    //        gradient = self.hidden_activation_prime(l_inputs)
-    //        next_layer = layer_num + 1
-    //        next_layer_error = layer_errors[0]
-    //        next_weights = self.layers[next_layer]['weights']
-    //        this_layer_err = np.matmul(next_layer_error.reshape((1, next_layer_error.shape[0])), next_weights)[0]
-    //        this_layer_err *= gradient
-    //        layer_errors.insert(0, this_layer_err)
-    //        layer_num -= 1
-    //    return layer_errors
-
-    //    m = X.shape[1]  # Number of examples
-    //    grad_W = [None] * (self.num_layers - 1)
-    //    grad_b = [None] * (self.num_layers - 1)
-
-    //    # Compute output layer error
-    //    delta = mse_loss_derivative(activations[-1], Y) * sigmoid_derivative(z_values[-1])
-    //    grad_W[-1] = np.dot(delta, activations[-2].T) / m
-    //    grad_b[-1] = np.sum(delta, axis=1, keepdims=True) / m
-
-    //    # Backpropagate through hidden layers
-    //    for l in range(self.num_layers - 2, 0, -1):
-    //        delta = np.dot(self.weights[l].T, delta) * sigmoid_derivative(z_values[l - 1])
-    //        grad_W[l - 1] = np.dot(delta, activations[l - 1].T) / m
-    //        grad_b[l - 1] = np.sum(delta, axis=1, keepdims=True) / m
-
-    //    return grad_W, grad_b
-
     // BEGIN create error and update matrices
     std::vector<Matrix2D> layerErrors(numLayers); 
     std::vector<Matrix2D> weightDeltas(numLayers);
