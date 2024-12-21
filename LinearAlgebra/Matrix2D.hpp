@@ -37,11 +37,17 @@ public:
     void setElement(const size_t row, const size_t col, const double element);
 
     Matrix2D& add(const Matrix2D &rhs);
+    // assuming rhs is a m x 1 matrix and this is a m x n matrix
+    // add rhs to every column of this
+    Matrix2D& addColumnWise(const Matrix2D &rhs);
     Matrix2D& sub(const Matrix2D &rhs);
     // element wise multiplication
     Matrix2D& mul(const Matrix2D &rhs);
     Matrix2D& div(const Matrix2D &rhs);
     Matrix2D& scale(const double scalar);
+
+    // sum the elements row wise 0 or col wise 1
+    Matrix2D& sum(const int axis);
 
     static void add(const Matrix2D &matrixA, const Matrix2D &matrixB, Matrix2D &matrixC);
     static void sub(const Matrix2D &matrixA, const Matrix2D &matrixB, Matrix2D &matrixC);
@@ -64,8 +70,9 @@ public:
 
     std::shared_ptr<Matrix2D> getTranspose();
 
-    void show();
-    std::string getStringRepresentation();
+    void show() const;
+    void serialize(const std::string& filepath) const;
+    std::string getStringRepresentation() const;
 
     Matrix2D& operator=(const Matrix2D& matrix);
     //Matrix2D operator+(const Matrix2D& matrix) const;
@@ -82,8 +89,8 @@ public:
     // get diagonal matrix values
     std::vector<double> diagonal() const;
 
-    std::vector<double> &getRow(const size_t rowIndex) const;
-    std::vector<double> &getCol(const size_t colIndex) const;
+    std::vector<double> getRow(const size_t rowIndex) const;
+    std::vector<double> getCol(const size_t colIndex) const;
 };
 
 #endif // MATRIX2D_HPP

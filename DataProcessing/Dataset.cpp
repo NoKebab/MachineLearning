@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <random>
+#include <map>
 
 
 Dataset::Dataset()
@@ -22,7 +23,7 @@ void Dataset::loadCsv(const std::string &filepath, const std::string &delimiter)
     std::ifstream inputFile(filepath);
     if (!inputFile.is_open())
     {
-        std::cerr << "Dataset<T>::loadCsv() Unable to open file";
+        std::cerr << "Dataset<T>::loadCsv() Unable to open file " << filepath << std::endl;
         return;
     }
     // parse csv
@@ -86,10 +87,9 @@ TrainTest Dataset::trainTestSplit(const float trainRatio)
     }
     const size_t numTrainingElements = predictor.size() * trainRatio;
 
+    // grab a list of random indices to get an even sample of the dataset
     std::random_device rd;
     std::mt19937_64 g(rd());
-
-    // grab a list of random indices to get an even sample of the dataset
     std::vector<size_t> indices;
     for (size_t i = 0; i < predictor.size(); ++i)
     {
@@ -112,6 +112,71 @@ TrainTest Dataset::trainTestSplit(const float trainRatio)
             trainTest.yTest.push_back(predictor[index]);
         }
     }
+    return trainTest;
+}
+
+TrainTest Dataset::trainTestSplitEqualClasses(const float trainRatio)
+{
+    std::map<int, int> numClassOccurences;
+    for (size_t i = 0; i < predictor.size(); ++i)
+    {
+        if (numClassOccurences.contains(predictor[i]))
+        {
+            numClassOccurences[predictor[i]] += 1;
+        }
+        else
+        {
+            numClassOccurences[predictor[i]] = 1;
+        }
+    }
+
+    // find class with least representation 
+    // then sample the same number of elements from every other class
+
+    int minNumClasses = numClassOccurences[0];
+    int minNumClassesIndex = 0;
+    for (auto const& [classNumber, numOccurences] : numClassOccurences)
+    {
+        if (numOccurences < minNumClasses)
+        {
+            minNumClasses = numOccurences;
+            minNumClassesIndex = classNumber;
+        }
+    }
+
+    TrainTest trainTest;
+    const size_t numTrainingElements = minNumClasses * trainRatio;
+    const size_t numTestingElements = minNumClasses - numTrainingElements;
+
+    for (size_t classIndex = 0; classIndex < numClassOccurences.size(); ++classIndex)
+    {
+        Dataset classDataset = getAllByClass(classIndex);
+
+        // grab a list of random indices to get an even sample of the dataset
+        std::random_device rd;
+        std::mt19937_64 g(rd());
+        std::vector<size_t> indices(classDataset.predictor.size());
+        for (size_t i = 0; i < classDataset.predictor.size(); ++i)
+        {
+            indices[i] = i;
+        }
+        std::shuffle(indices.begin(), indices.end(), g);
+
+        for (size_t i = 0; i < (numTrainingElements + numTestingElements); ++i)
+        {
+            if (i < numTrainingElements)
+            {
+                trainTest.xTrain.emplace_back(classDataset.attributes[indices[i]]);
+                trainTest.yTrain.emplace_back(classDataset.predictor[indices[i]]);
+            }
+            else
+            {
+                trainTest.xTest.emplace_back(classDataset.attributes[indices[i]]);
+                trainTest.yTest.emplace_back(classDataset.predictor[indices[i]]);
+            }
+        }
+    }
+
     return trainTest;
 }
 
@@ -182,4 +247,20 @@ void Dataset::serialize(const std::string& filepath, const bool index)
     }
 
     outCsvFile.close();
+}
+
+Dataset Dataset::getAllByClass(const int classIndex)
+{
+    Dataset dataset;
+
+    for (int i = 0; i < predictor.size(); ++i)
+    {
+        if (predictor[i] == classIndex)
+        {
+            dataset.attributes.emplace_back(attributes[i]);
+            dataset.predictor.emplace_back(predictor[i]);
+        }
+    }
+
+    return dataset;
 }

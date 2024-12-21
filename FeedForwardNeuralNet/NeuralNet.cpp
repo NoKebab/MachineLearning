@@ -56,6 +56,27 @@ std::vector<int> NeuralNet::test(std::vector<std::vector<double>> &xTest)
         }
         predictions.push_back(prediction);
     }
+
+    //feedForward(xTest);
+    //for (size_t i = 0; i < activatedOutputs.back().getCols(); ++i)
+    //{
+    //    std::vector<double> networkOutput = activatedOutputs.back().getCol(i);
+    //    // make prediction => choose highest element
+    //    // argmax
+    //    int prediction = 0;
+    //    double maxPred = std::numeric_limits<double>().min();
+    //    const size_t numOutputs = networkOutput.size();
+    //    for (size_t j = 0; j < numOutputs; j++)
+    //    {
+    //        if (maxPred < networkOutput[j]) 
+    //        {
+    //            maxPred = networkOutput[j];
+    //            prediction = static_cast<int>(j);
+    //        }
+    //    }
+    //    predictions.push_back(prediction);
+    //}
+
     return predictions;
 }
 
@@ -63,18 +84,18 @@ void NeuralNet::feedForward(std::vector<std::vector<double>> &featureData)
 {
 
     // update z value, activated, and input size to reflect number of samples
+    //inputs[0] = *Matrix2D(featureData).getTranspose();
     inputs[0] = Matrix2D(featureData);
-    inputs[0] = *inputs[0].getTranspose();
 
     for (size_t i = 0; i < numLayers; ++i)
     {
         const bool lastLayer = i == (numLayers - 1);
         // update z value, activated, and input size to reflect number of samples
-        zValues[i] = Matrix2D(weights[i].getRows(), inputs[i].getCols());
-        activatedOutputs[i] = Matrix2D(weights[i].getRows(), inputs[i].getCols());
+        zValues[i] = Matrix2D(weights[i].getRows(), inputs[i].getRows());
+        activatedOutputs[i] = Matrix2D(weights[i].getRows(), inputs[i].getRows());
 
-        Matrix2D::matrixMultiply(weights[i], inputs[i], zValues[i]);
-        zValues[i].add(biases[i]);
+        Matrix2D::matrixMultiply(weights[i], *inputs[i].getTranspose(), zValues[i]);
+        zValues[i].addColumnWise(biases[i]);
         activatedOutputs[i] = zValues[i];
         activatedOutputs[i].map(sigmoidElement);
         if (!lastLayer)
@@ -88,28 +109,66 @@ void NeuralNet::backPropagation(std::vector<int> &targets)
 {
     const size_t numExamples = targets.size();
     // BEGIN create error and update matrices
-    Matrix2D layerDelta; 
+    //Matrix2D layerDelta; 
+    std::vector<Matrix2D> layerErrors(numLayers); 
     std::vector<Matrix2D> weightDeltas(numLayers);
     std::vector<Matrix2D> biasDeltas(numLayers);
     // TODO: make construction of this static 
     for (size_t i = 0; i < numLayers; ++i)
     {
+        layerErrors[i] = Matrix2D(activatedOutputs[i].getRows(), activatedOutputs[i].getCols());
         weightDeltas[i] = Matrix2D(weights[i].getRows(), weights[i].getCols());
         biasDeltas[i] = Matrix2D(biases[i].getRows(), biases[i].getCols());
     }
     // END create error and update matrices
     
     // last layer delta
+    // TODO: diagnose some problem here
     Matrix2D trueLabels(activatedOutputs[numLayers - 1].getRows(), numExamples);
     for (size_t i = 0; i < numExamples; ++i)
     {
         trueLabels.setElement(targets[i], i, 1.f);
-
     }
-	Matrix2D delta(activatedOutputs.back());
-	delta.sub(trueLabels);
+    //trueLabels.serialize("C:/Users/Peyton/dev/MachineLearning/Temp/trueLabels.csv");
+
+    Matrix2D gradient(zValues[numLayers - 1]);
+    gradient.map(sigmoidElementPrime);
+
+    //Matrix2D delta(activatedOutputs[numLayers - 1]);
+    layerErrors[numLayers - 1] = activatedOutputs[numLayers - 1];
+    layerErrors[numLayers - 1].sub(trueLabels);
+    layerErrors[numLayers - 1].mul(gradient);
     
-    // previous layers deltas
+    // BEGIN last layer weight & bias updates
+    Matrix2D::matrixMultiply(layerErrors[numLayers - 1], *inputs[numLayers - 1].getTranspose(), weightDeltas[numLayers - 1]);
+    biasDeltas[numLayers - 1] = layerErrors[numLayers - 1];
+    // END last layer weight & bias updates
+
+    // BEGIN backpropagation
+    for (int i = numLayers - 2; i >= 0; --i)
+    {
+        Matrix2D::matrixMultiply(*weights[i + 1].getTranspose(), layerErrors[i + 1], layerErrors[i]);
+        gradient = Matrix2D(zValues[i]);
+        gradient.map(sigmoidElementPrime);
+        layerErrors[i].mul(gradient);
+
+        Matrix2D::matrixMultiply(layerErrors[i], *inputs[i].getTranspose(), weightDeltas[i]);
+        biasDeltas[i] = layerErrors[i];
+    }
+    // END backpropagation
+
+    // update weights and biases
+    for (size_t i = 0; i < numLayers; ++i)
+    {
+        biasDeltas[i].sum(0);
+
+        weightDeltas[i].scale(1.f / static_cast<double>(numExamples));
+        biasDeltas[i].scale(1.f / static_cast<double>(numExamples));
+        weightDeltas[i].scale(learningRate);
+        biasDeltas[i].scale(learningRate);
+        weights[i].sub(weightDeltas[i]);
+        biases[i].sub(biasDeltas[i]);
+    }
 }
 
 void NeuralNet::feedForward(std::vector<double> &featureVector)
@@ -119,9 +178,7 @@ void NeuralNet::feedForward(std::vector<double> &featureVector)
     for (size_t i = 0; i < numLayers; ++i)
     {
         const bool lastLayer = i == (numLayers - 1);
-        //Matrix2D *output = lastLayer ? &networkOutput : &inputs[i + 1];
-        //weights[i].show();
-        //inputs[i].show();
+
         Matrix2D::matrixMultiply(weights[i], inputs[i], zValues[i]);
         zValues[i].add(biases[i]);
         activatedOutputs[i] = zValues[i];
@@ -131,17 +188,9 @@ void NeuralNet::feedForward(std::vector<double> &featureVector)
         {
             inputs[i + 1] = activatedOutputs[i];
         }
-        //*output = zValues[i];
-        //output->map(sigmoidElement);
-        
-        //output->map(sigmoidElement);
-        //if (lastLayer)
-        //{
-        //    softmax(*output);
-        //}
         //else
         //{
-        //    output->map(sigmoidElement);
+        //    softmax(activatedOutputs[i]);
         //}
     }
 }

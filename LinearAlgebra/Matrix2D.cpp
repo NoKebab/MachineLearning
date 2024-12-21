@@ -1,6 +1,8 @@
 #include "Matrix2D.hpp"
 #include <iostream>
 #include <cstring>
+#include <sstream>
+#include <fstream>
 
 Matrix2D::Matrix2D()
     : rows(0)
@@ -87,7 +89,10 @@ double Matrix2D::getElement(const size_t row, const size_t col) const
     // prevent illegal memory access
     if (index >= length)
     {
-        return 0;
+        char s[100];
+        sprintf_s(s, "Matrix2D::getElement() index %zu with row %zu and col %zu exceeds length %zu\n", index, row, col, length);
+        std::cout << s << std::endl;
+        //throw std::invalid_argument(s);
     }
     return elements[index];
 }
@@ -120,6 +125,24 @@ Matrix2D& Matrix2D::add(const Matrix2D &rhs)
     return *this;
 }
 
+Matrix2D& Matrix2D::addColumnWise(const Matrix2D& rhs)
+{
+    if (rows != rhs.rows)
+    {
+        char s[100];
+        sprintf_s(s, "Matrix2D::addColumnWise() rows %zu != %zu\n", rows, rhs.rows);
+        throw std::invalid_argument(s);
+    }
+    for (size_t row = 0; row < rows; ++row)
+    {
+        const double x = rhs.getElement(row, 0);
+        for (size_t col = 0; col < cols; ++col)
+        {
+            setElement(row, col, getElement(row, col) + x);
+        }
+    }
+    return *this;
+}
 
 Matrix2D& Matrix2D::sub(const Matrix2D &rhs)
 {
@@ -189,6 +212,41 @@ Matrix2D& Matrix2D::scale(const double scalar)
     return *this;
 }
 
+// sum the elements row wise 0 or col wise 1
+Matrix2D& Matrix2D::sum(const int axis)
+{
+    if (0 == axis)
+    {
+        Matrix2D summedMatrix(rows, 1);
+        for (size_t row = 0; row < rows; ++row)
+        {
+            double summedCol = 0;
+            for (size_t col = 0; col < cols; ++col)
+            {
+                summedCol += getElement(row, col);
+            }
+            summedMatrix.setElement(row, 0, summedCol);
+        }
+        *this = summedMatrix;
+    }
+    else if (1 == axis)
+    {
+        // TODO
+        Matrix2D summedMatrix(cols, 1);
+        for (size_t col = 0; col < cols; ++col)
+        {
+            double summedCol = 0;
+            for (size_t row = 0; row < rows; ++row)
+            {
+                summedCol += getElement(row, col);
+            }
+            
+            summedMatrix.setElement(col, 0, summedCol);
+        }
+        *this = summedMatrix;
+    }
+    return *this;
+}
 
 void Matrix2D::add(const Matrix2D &matrixA, const Matrix2D &matrixB, Matrix2D &matrixC)
 {
@@ -323,7 +381,7 @@ Matrix2D& Matrix2D::map(double (*mappingFunction)(const double))
 }
 
 
-void Matrix2D::show()
+void Matrix2D::show() const
 {
     std::cout << rows << "x" << cols << std::endl;
     for (size_t row = 0; row < rows; ++row)
@@ -342,31 +400,43 @@ void Matrix2D::show()
     }
 }
 
-
-std::string Matrix2D::getStringRepresentation()
+void Matrix2D::serialize(const std::string& filepath) const
 {
-    std::string s = "";
+    std::ofstream outputFile(filepath);
+    if (!outputFile.is_open())
+    {
+        std::cout << "Matrix2D::serialize() could not open " << filepath << std::endl;
+        return;
+    }
+
+    outputFile << getStringRepresentation();
+    outputFile.close();
+}
+
+std::string Matrix2D::getStringRepresentation() const
+{
+    std::stringstream s;
     //std::cout << rows << "x" << cols << std::endl;
-    s += std::to_string(rows);
-    s += "x";
-    s += std::to_string(cols);
-    s += "\n";
+    s << std::to_string(rows);
+    s << "x";
+    s << std::to_string(cols);
+    s << "\n";
     for (size_t row = 0; row < rows; ++row)
     {
         for (size_t col = 0; col < cols; ++col)
         {
-            s += std::to_string(getElement(row, col));
+            s << std::to_string(getElement(row, col));
             if (col != cols - 1)
             {
-                s += ",";
+                s << ",";
             }
             //printf("%.6f,", getElement(row, col));
             //std::cout << getElement(row, col) << ",";
         }
-        s += "\n";
+        s << "\n";
         //std::cout << std::endl;
     }
-    return s;
+    return s.str();
 }
 
 
@@ -377,6 +447,7 @@ Matrix2D& Matrix2D::operator=(const Matrix2D& matrix)
     length = matrix.length;
 
     elements = matrix.elements;
+    matrixTranspose = matrix.matrixTranspose;
     //elements.clear();
     //for (double element : matrix.elements)
     //{
@@ -481,7 +552,7 @@ std::shared_ptr<Matrix2D> Matrix2D::getTranspose()
 {
     if (0 == matrixTranspose)
     {
-		matrixTranspose = std::make_shared<Matrix2D>(cols, rows);
+        matrixTranspose = std::make_shared<Matrix2D>(cols, rows);
     }
     matrixTranspose->elements = elements;
     return matrixTranspose;
@@ -514,7 +585,7 @@ std::vector<double> Matrix2D::diagonal() const
     return diagonalElements;
 }
 
-std::vector<double> &Matrix2D::getRow(const size_t rowIndex) const
+std::vector<double> Matrix2D::getRow(const size_t rowIndex) const
 {
     std::vector<double> row;
     if (rowIndex >= rows)
@@ -529,7 +600,7 @@ std::vector<double> &Matrix2D::getRow(const size_t rowIndex) const
     return row;
 }
 
-std::vector<double>& Matrix2D::getCol(const size_t colIndex) const
+std::vector<double> Matrix2D::getCol(const size_t colIndex) const
 {
     std::vector<double> col;
     if (colIndex >= cols)

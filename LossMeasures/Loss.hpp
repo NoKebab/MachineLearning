@@ -8,7 +8,7 @@ class Loss
 private:
 	Matrix2D confusionMatrix;
 public:
-	Loss(const std::vector<int>& truth, const std::vector<int>& predictions, const size_t numClasses);
+	Loss(const std::vector<int>& truth, const std::vector<int>& predictions);
 
 	int getTruePositives(const int classNumber) const;
 	int getFalsePositives(const int classNumber) const;

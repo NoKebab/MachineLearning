@@ -26,6 +26,8 @@ public:
 
     TrainTest trainTestSplit(const float trainRatio=0.8);
 
+    TrainTest trainTestSplitEqualClasses(const float trainRatio=0.8);
+
     void normalize(const size_t col);
 
     void normalize(const std::vector<size_t> columns);
@@ -34,6 +36,8 @@ public:
       * Write dataset in csv format
       */
     void serialize(const std::string& filepath , const bool index = false);
+
+    Dataset getAllByClass(const int classIndex);
 };
 
 #endif // DATASET_HPP

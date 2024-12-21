@@ -47,7 +47,7 @@ void softmax(std::vector<double> &x)
 
 void softmax(Matrix2D &matrix)
 {
-    matrix.map([](const double x) -> double { return x * x; });
+    //matrix.map([](const double x) -> double { return x * x; });
     std::vector<double>& elements = matrix.getElements();
     const size_t length = matrix.getLength();
     double* expVect = new double[length];

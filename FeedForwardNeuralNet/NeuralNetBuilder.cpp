@@ -112,6 +112,7 @@ NeuralNet& NeuralNetBuilder::build()
     {
         std::cout << "NeuralNetBuilder::build() Invalid Neural Net Built" << std::endl;
     }
+    randomizeWeights();
     return neuralNet;
 }
 

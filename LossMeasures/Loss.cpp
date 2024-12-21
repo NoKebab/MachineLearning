@@ -1,8 +1,22 @@
 #include "Loss.hpp"
+#include <map>
 
-Loss::Loss(const std::vector<int>& truth, const std::vector<int>& predictions, const size_t numClasses)
-	: confusionMatrix(numClasses, numClasses)
+Loss::Loss(const std::vector<int>& truth, const std::vector<int>& predictions)
 {
+	// the number of unique elements determines the size of the confusion matrix
+	std::map<int, int> numClassOccurences;
+	for (size_t i = 0; i < predictions.size(); ++i)
+	{
+		if (numClassOccurences.contains(truth[i]))
+		{
+			numClassOccurences[truth[i]] += 1;
+		}
+		else
+		{
+			numClassOccurences[truth[i]] = 1;
+		}
+	}
+	confusionMatrix = Matrix2D(numClassOccurences.size(), numClassOccurences.size());
 	for (size_t i = 0; i < predictions.size(); ++i)
 	{
 		confusionMatrix.setElement(truth[i], predictions[i], confusionMatrix.getElement(truth[i], predictions[i]) + 1);

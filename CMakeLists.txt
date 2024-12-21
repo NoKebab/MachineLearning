@@ -4,7 +4,7 @@ project(NeuralNet)
 
 set(target ${PROJECT_NAME})
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(DataProcessing)
 add_subdirectory(LinearAlgebra)
